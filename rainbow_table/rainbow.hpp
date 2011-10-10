@@ -12,7 +12,7 @@
 #define ASCII_END 122
 #define ASCII_COUNT (ASCII_END - ASCII_BEGIN + 1)
 #define CHAIN_LENGTH 1000000
-#define MAX_LENGTH 8
+#define MAX_LENGTH 6
 
 namespace rt {
 
@@ -162,11 +162,11 @@ namespace rt {
             strcpy(buf, seed);
             for (int i = 0; i < CHAIN_LENGTH; ++i) {
                 h = hash(buf, slen);
-                printf("%s => %d(%d)\n", buf, h, i);
+                //                printf("%s => %d(%d)\n", buf, h, i);
                 reduction(buf, slen, h, i);
             }
             h = hash(buf, slen);
-            printf("%s => %d\n", buf, h);
+            //            printf("%s => %d\n", buf, h);
             tbl_.set(h, seed, slen);
         }
 
