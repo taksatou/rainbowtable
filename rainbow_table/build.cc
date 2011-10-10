@@ -39,7 +39,16 @@ int main(int argc, char **argv) {
     signal(SIGINT, trap);
     chain.init();
     for (int i = tab_num; i <= MAX_LENGTH && !done; ++i) {
-        int chains = CHAIN_LENGTH;
+        int chains;
+        switch (i) {
+        case 1: chains = 4; break;
+        // case 2: chains = 100; break;
+        // case 3: chains = 1000; break;
+        default:
+            chains = 10 * (1 + (pow(ASCII_COUNT, i) / CHAIN_LENGTH));
+            break;
+        }
+        //        int chains = 4;
         cout << "building table... " << i << endl;
         for (int j = 1; j <= chains && !done; ++j) {
             if (j % 1000 == 0)

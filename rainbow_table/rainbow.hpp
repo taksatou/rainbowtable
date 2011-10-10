@@ -11,44 +11,10 @@
 #define ASCII_BEGIN 48
 #define ASCII_END 122
 #define ASCII_COUNT (ASCII_END - ASCII_BEGIN + 1)
-#define CHAIN_LENGTH 10000000
+#define CHAIN_LENGTH 1000000
 #define MAX_LENGTH 8
 
 namespace rt {
-
-    // class Func {};
-
-    // class Reductor : public Func {
-    //     std::vector<int> primes_;
-
-    // public:
-
-    //     Reductor() {
-    //         primes_ = primes(CHAIN_LENGTH);
-    //     }
-
-    //     char* operator()(char *buf, int len, int h, int idx) {
-    //         for (int i = 0; i < len; ++i) {
-    //             h *= primes_[idx];
-    //             buf[i] = ASCII_BEGIN + abs(h % ASCII_COUNT);
-    //         }
-    //         buf[len] = 0;
-    //         return buf;
-    //     }
-    // };
-
-    // class Hash : public Func {
-    // public:
-
-    //     int operator()(char *s, int len) {
-    //         int ret = 0;
-
-    //         for (int i = 0; i < len; i++)
-    //             ret = 26 * ret + (s[i]-26);
-
-    //         return ret;
-    //     }
-    // };
 
     class RainbowTable {
     private:
@@ -160,7 +126,6 @@ namespace rt {
             return buf;
         }
 
-
         inline char* reduction(char *buf, int len, int h, int idx) {
             for (int i = 0; i < len; ++i) {
                 h = bit_invert32(h) * primes_[idx] + (h % primes_[idx+1]);
@@ -186,7 +151,7 @@ namespace rt {
                 tbl_.open();
                 tbl_.purge();
             }
-            primes_ = primes(CHAIN_LENGTH+10);
+            primes_ = get_primes2(CHAIN_LENGTH+10);
             //            std::cout << primes_ << std::endl;
         }
 
@@ -197,11 +162,11 @@ namespace rt {
             strcpy(buf, seed);
             for (int i = 0; i < CHAIN_LENGTH; ++i) {
                 h = hash(buf, slen);
-                //                printf("%s => %d(%d)\n", buf, h, i);
+                printf("%s => %d(%d)\n", buf, h, i);
                 reduction(buf, slen, h, i);
             }
             h = hash(buf, slen);
-            //            printf("%s => %d\n", buf, h);
+            printf("%s => %d\n", buf, h);
             tbl_.set(h, seed, slen);
         }
 

@@ -11,7 +11,7 @@ int main(int argc, char **argv) {
     int h;
 
     if (argc < 2) {
-        cout << "usage: ./util <hash|chain|get>" << endl;
+        cout << "usage: ./util <hash|chain|test>" << endl;
         exit(1);
     }
 
@@ -36,6 +36,9 @@ int main(int argc, char **argv) {
             chain.reduction(buf, slen, h, i);
             cout << " => " << h << " => " << buf << endl;
         }
+    } else if (!strcmp(argv[1], "test")) {
+        chain.init();
+
     } else {
         cout << "unknown command" << endl;
     }

@@ -2,7 +2,7 @@ all:: solve build util
 .PHONY: clean
 
 MYLIB = rainbow.hpp
-OPT = -O3 -g
+OPT = -O0 -g
 
 solve: solve.cc $(MYLIB)
 	c++ $(OPT) -ltokyocabinet -Wl,-rpath=/usr/lib solve.cc -o solve
