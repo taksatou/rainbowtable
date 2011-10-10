@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
         }
         strcpy(buf, argv[2]);
         int slen = strlen(buf);
-
+        chain.init(true);
         for (int i = 0; i < CHAIN_LENGTH; ++i) {
             h = chain.hash(buf, slen);
             chain.reduction(buf, slen, h, i);

@@ -10,6 +10,10 @@ int main() {
     char buf[256];
     int h;
 
+    cout << "initializing... " << flush;
+    chain.init(true);
+    cout << "done" << endl;
+
     cout << "hash: " << flush;
     while (fgets(buf, 256, stdin)) {
         int x = atoi(buf);
