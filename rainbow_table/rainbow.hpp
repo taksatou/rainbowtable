@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstring>
 #include <set>
+#include <libhashkit/hashkit.h>
 #include </home/takayuki/work/include/utils.hpp>
 #include </home/takayuki/work/include/dumper.hpp>
 
@@ -11,8 +12,8 @@
 #define ASCII_BEGIN 48
 #define ASCII_END 122
 #define ASCII_COUNT (ASCII_END - ASCII_BEGIN + 1)
-#define CHAIN_LENGTH 1000000
-#define MAX_LENGTH 6
+#define CHAIN_LENGTH 100000
+#define MAX_LENGTH 7
 
 namespace rt {
 
@@ -71,8 +72,10 @@ namespace rt {
 
     class Chain {
     private:
+        Hashkit h;
         RainbowTable tbl_;
         std::vector<int> primes_;
+        char *magic_seeds_[CHAIN_LENGTH + 10];
 
     public:
 
@@ -126,7 +129,9 @@ namespace rt {
             return buf;
         }
 
-        inline char* reduction(char *buf, int len, int h, int idx) {
+        //  bench v2 from here
+        //  322574  322574 1284526
+        inline char* reduction5(char *buf, int len, int h, int idx) {
             for (int i = 0; i < len; ++i) {
                 h = bit_invert32(h) * primes_[idx] + (h % primes_[idx+1]);
                 buf[i] = ASCII_BEGIN + abs(h % ASCII_COUNT);
@@ -134,6 +139,125 @@ namespace rt {
             buf[len] = 0;
             return buf;
         }
+
+        // 305335  305335 1215570
+        inline char* reduction6(char *buf, int len, int h, int idx) {
+            int x = primes_[idx];
+            for (int i = 0; i < len; ++i) {
+                h = bit_invert32(h) * x + (h % primes_[(unsigned int)(x + h) % (CHAIN_LENGTH-1)]);
+                x = primes_[(unsigned int)h % (CHAIN_LENGTH-1)];
+                buf[i] = ASCII_BEGIN + abs(h % ASCII_COUNT);
+            }
+            buf[len] = 0;
+            return buf;
+        }
+
+
+        //  ./build > out  32.84s user 0.43s system 98% cpu 33.795 total
+        //  131880  131880  521833
+        inline char* reduction7(char *buf, int len, int h, int idx) {
+            srand(idx);
+            for (int i = 0; i < len; ++i) {
+                h = bit_invert32(h) * primes_[rand() % (CHAIN_LENGTH - 1)];
+                buf[i] = ASCII_BEGIN + abs(h % ASCII_COUNT);
+            }
+            buf[len] = 0;
+            return buf;
+        }
+
+        // ./build > out  17.33s user 0.32s system 97% cpu 18.083 total
+        //  309061  309061 1230474
+        inline char* reduction8(char *buf, int len, int h, int idx) {
+            for (int i = 0; i < len; ++i) {
+                h = bit_invert32(h) * primes_[idx] + (h % primes_[idx+1]);
+                buf[i] = ASCII_BEGIN + abs(h % ASCII_COUNT);
+            }
+            buf[len] = 0;
+
+            h = libhashkit_digest(buf, len, HASHKIT_HASH_JENKINS);
+
+            for (int i = 0; i < len; ++i) {
+                h = bit_invert32(h) * primes_[idx+2] + (h % primes_[idx+3]);
+                buf[i] = ASCII_BEGIN + abs(h % ASCII_COUNT);
+            }
+            buf[len] = 0;
+            return buf;
+        }
+
+        // ./build > out  17.18s user 0.41s system 91% cpu 19.196 total
+        //  294662  294662 1172878
+        inline char* reduction9(char *buf, int len, int h, int idx) {
+            for (int i = 0; i < len; ++i) {
+                h = bit_invert32(h) * primes_[idx] + (h % primes_[idx+1]);
+                buf[i] = ASCII_BEGIN + abs(h % ASCII_COUNT);
+            }
+            buf[len] = 0;
+
+            h = libhashkit_digest(buf, len, HASHKIT_HASH_MURMUR);
+
+            for (int i = 0; i < len; ++i) {
+                h = bit_invert32(h) * primes_[idx+2] + (h % primes_[idx+3]);
+                buf[i] = ASCII_BEGIN + abs(h % ASCII_COUNT);
+            }
+            buf[len] = 0;
+            return buf;
+        }
+
+        //  ./build > out  7.75s user 0.47s system 85% cpu 9.627 total
+        //  244425  244425  971930
+        inline char* reduction10(char *buf, int len, int h, int idx) {
+            switch (idx % 4) {
+            case 0:
+                for (int i = 0; i < len; ++i) {
+                    h = bit_invert32(h) * primes_[idx] + (h % primes_[idx+1]);
+                    buf[i] = ASCII_BEGIN + abs(h % ASCII_COUNT);
+                }
+                break;
+            case 1:
+                for (int i = 0; i < len; ++i) {
+                    h = bit_invert32(h) * primes_[idx];
+                    buf[i] = ASCII_BEGIN + abs(h % ASCII_COUNT);
+                }
+                break;
+            case 2:
+                for (int i = 0; i < len; ++i) {
+                    h *= primes_[idx+i];
+                    buf[i] = ASCII_BEGIN + abs(h % ASCII_COUNT);
+                }
+                break;
+            default:
+                for (int i = 0; i < len; ++i) {
+                    h = h * primes_[idx] + h % primes_[idx+1];
+                    buf[i] = ASCII_BEGIN + abs(h % ASCII_COUNT);
+                }
+                break;
+            }
+
+            buf[len] = 0;
+            return buf;
+        }
+
+        // ./build > out  5.01s user 0.54s system 79% cpu 7.008 total
+        //   88667   88667  348984
+        inline char* reduction11(char *buf, int len, int h, int idx) {
+            int a, b, c, d;
+            for (int i = 0; i < len; ++i) {
+                h *= primes_[idx];
+                // a = h & 0x0000FFFF;
+                // b = h & 0xFFFF0000;
+                c = h & 0x00FF00FF;
+                d = h & 0xFF00FF00;
+                h = (c << 8) | (b >> 8);
+                buf[i] = ASCII_BEGIN + abs(h % ASCII_COUNT);
+            }
+            buf[len] = 0;
+            return buf;
+        }
+
+        inline char* reduction(char *buf, int len, int h, int idx) {
+            return reduction5(buf, len, h, idx);
+        }
+
 
         inline int hash(char *s, int len) {
             int ret = 0;
@@ -144,6 +268,20 @@ namespace rt {
             return ret;
         }
 
+        void delete_magic_seed(int n) {
+            for (int i = 0; i < n; ++i) {
+                free(magic_seeds_[i]);
+            }
+        }
+
+        void init_magic_seed(int n, hashkit_hash_algorithm_t a) {
+            // int seed_size = 256;
+            // buff
+            // for (int i = 0; i < n; ++i) {
+            //     magic_seeds_[i] = malloc(seed_size);
+            // }
+        }
+
         void init(bool readonly=false) {
             if (readonly) {
                 tbl_.open(readonly);
@@ -152,6 +290,8 @@ namespace rt {
                 tbl_.purge();
             }
             primes_ = get_primes2(CHAIN_LENGTH+10);
+            //h.set_function(HASHKIT_HASH_JENKINS);
+            //            init_magic_seed();
             //            std::cout << primes_ << std::endl;
         }
 
